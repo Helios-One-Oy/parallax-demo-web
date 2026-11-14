@@ -1,0 +1,82 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Every build runs twice: a bare twin and a decoy twin dressed as a release.
+  # CRACI records every connection of both. Parallax diffs the two traces.
+  build:
+    name: build (${{ matrix.twin }})
+    runs-on: craci
+    strategy:
+      fail-fast: false
+      matrix:
+        twin: [bare, decoy]
+    steps:
+      - uses: cracicorp/setup@v1
+        with:
+          size: "4"
+          image: "default"
+      - uses: actions/checkout@v4
+      - name: Dress this twin
+        uses: ToukoUrsin/parallax/dress@main
+        with:
+          twin: ${{ matrix.twin }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Twins only RESTORE the cache; they never save it, so a twin can never
+      # poison the cache the release job trusts.
+      - uses: actions/cache/restore@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('**/package-lock.json') }}
+      - run: plx-run npm ci
+      - run: plx-run npm test
+      - run: plx-run npm run build
+
+  # After both twins finish, Parallax fetches both traces + SBOMs from the CRACI
+  # API, diffs them, writes the job summary and fails on divergence.
+  verdict:
+    needs: build
+    if: always()
+    runs-on: craci
+    steps:
+      - uses: cracicorp/setup@v1
+      - uses: actions/checkout@v4
+      - name: Parallax verdict
+        uses: ToukoUrsin/parallax/verdict@main
+        with:
+          craci-token: ${{ secrets.CRACI_API_TOKEN }}
+          github-token: ${{ github.token }}
+
+  # The real release job. It only starts once the verdict is clean. It is the
+  # single cache-producing job (restore + save).
+  release:
+    needs: verdict
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: craci
+    steps:
+      - uses: cracicorp/setup@v1
+        with:
+          size: "4"
+          image: "default"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('**/package-lock.json') }}
+      - run: npm ci
+      - run: npm run build
+      - name: Build the release image (not pushed)
+        run: docker build -t northbound-dispatch-web:${{ github.sha }} .
+      # TODO(lead): once the CRACI GitHub connection is live, add GHCR login and
+      # `docker push` here (log in with ${{ github.token }} to ghcr.io and push
+      # ghcr.io/toukoursin/parallax-demo-web:${{ github.sha }}).
