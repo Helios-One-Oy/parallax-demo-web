@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@nbd/date-range": "3.0.0",
+    "@nbd/date-range": "3.0.1",
     "@nbd/release-notes": "1.4.0",
     "@nbd/telemetry-utils": "2.1.0",
     "express": "^4.21.2",
