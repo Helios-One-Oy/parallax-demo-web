@@ -14,6 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@nbd/carrier-sync-normalize": "^1.0.0",
     "@nbd/date-range": "3.0.0",
     "@nbd/release-notes": "1.4.0",
     "@nbd/telemetry-utils": "2.1.0",

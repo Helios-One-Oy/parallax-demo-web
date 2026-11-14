@@ -1,5 +1,6 @@
 import { inRange } from "@nbd/date-range";
 import { event } from "@nbd/telemetry-utils";
+import { normalizeCarrier } from "@nbd/carrier-sync-normalize";
 import { logger } from "./logger.js";
 
 export type ShipmentStatus =
@@ -86,4 +87,9 @@ export function etaCovers(id: string, date: string): boolean | undefined {
 export function _reset(): void {
   store.clear();
   seq = 1000;
+}
+
+// Normalise carrier names coming off the upstream feed to a canonical code.
+export function carrierCode(raw: string): string {
+  return normalizeCarrier(raw);
 }
