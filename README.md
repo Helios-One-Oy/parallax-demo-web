@@ -1,7 +1,7 @@
 # Northbound Dispatch — web
 
 Shipment tracking API for the fictional logistics company Northbound Dispatch.
-Part of the Parallax fleet (`ToukoUrsin/parallax-demo-web`): its CI runs twice on
+Part of the Parallax fleet (`Helios-One-Oy/parallax-demo-web`): its CI runs twice on
 CRACI runners (a bare twin and a decoy twin) so Parallax can diff their network
 traces.
 
