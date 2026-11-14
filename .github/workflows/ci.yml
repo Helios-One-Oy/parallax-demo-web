@@ -46,12 +46,13 @@ jobs:
 
   # After both twins finish, Parallax fetches both traces + SBOMs from the CRACI
   # API, diffs them, writes the job summary and fails on divergence.
+  # The judge sits outside the build network: CRACI does not let a job on its
+  # runners read CRACI's records ("Access denied"), so this one job is GitHub-hosted.
   verdict:
     needs: build
     if: always()
-    runs-on: craci
+    runs-on: ubuntu-latest
     steps:
-      - uses: cracicorp/setup@v1
       - uses: actions/checkout@v4
       - name: Parallax verdict
         uses: Helios-One-Oy/parallax/verdict@main
