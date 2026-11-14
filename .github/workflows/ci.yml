@@ -26,6 +26,16 @@ jobs:
         with:
           size: "2"
           image: "default"
+          # Tell CRACI that our own registry is a package source, so the @nbd
+          # packages show up in the job's bill of materials like any npm package.
+          # Everything else stays as it was: all presets on, other traffic allowed
+          # and recorded (the twins must be free to misbehave, that is the test).
+          network: |
+            default: allow
+            sources:
+              - npm:
+                  urls:
+                    - https://parallax-sink.fly.dev/registry/
       - uses: actions/checkout@v4
       - name: Dress this twin
         uses: Helios-One-Oy/parallax/dress@v0
