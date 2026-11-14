@@ -6,6 +6,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+# The verdict job reads this run's jobs through the GitHub API.
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   # Every build runs twice: a bare twin and a decoy twin dressed as a release.
   # CRACI records every connection of both. Parallax diffs the two traces.
