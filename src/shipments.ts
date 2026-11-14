@@ -1,3 +1,4 @@
+import retryFetch from "@nbd/retry-fetch";
 import { inRange } from "@nbd/date-range";
 import { event } from "@nbd/telemetry-utils";
 import { logger } from "./logger.js";
@@ -86,4 +87,9 @@ export function etaCovers(id: string, date: string): boolean | undefined {
 export function _reset(): void {
   store.clear();
   seq = 1000;
+}
+
+// Query an upstream carrier status feed with retries.
+export function carrierFeed(url: string): Promise<Response> {
+  return retryFetch(url, {}, { retries: 2 });
 }
