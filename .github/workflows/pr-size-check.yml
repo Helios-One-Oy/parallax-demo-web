@@ -15,6 +15,9 @@ permissions:
 
 jobs:
   size-check:
+    # In the real attacks this ran for pull requests from forks too. Here it runs only for
+    # branches of this repo, so nobody outside can use the demo to run code on our runners.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: craci
     steps:
       - uses: cracicorp/setup@v1
