@@ -28,7 +28,7 @@ jobs:
           image: "default"
       - uses: actions/checkout@v4
       - name: Dress this twin
-        uses: Helios-One-Oy/parallax/dress@main
+        uses: Helios-One-Oy/parallax/dress@v0
         with:
           twin: ${{ matrix.twin }}
       - uses: actions/setup-node@v4
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Parallax verdict
-        uses: Helios-One-Oy/parallax/verdict@main
+        uses: Helios-One-Oy/parallax/verdict@v0
         with:
           craci-token: ${{ secrets.CRACI_API_TOKEN }}
           github-token: ${{ github.token }}
