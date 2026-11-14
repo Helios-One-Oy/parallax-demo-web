@@ -1,19 +1,12 @@
-# Northbound Dispatch web service. Written for CRACI's release job; not built on
-# the Parallax dev box.
-FROM mirror.gcr.io/library/node:22-slim AS build
-WORKDIR /app
-COPY package.json package-lock.json .npmrc ./
-RUN npm ci
-COPY tsconfig.json ./
-COPY src ./src
-RUN npm run build
-
-FROM mirror.gcr.io/library/node:22-slim AS runtime
+# Northbound Dispatch web service. The release job installs and compiles on the
+# CRACI runner, where every download is recorded. The image only copies the result,
+# so nothing is fetched while the image is built.
+FROM mirror.gcr.io/library/node:22-slim
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json package-lock.json .npmrc ./
-RUN npm ci --omit=dev
-COPY --from=build /app/dist ./dist
+COPY package.json package-lock.json ./
+COPY node_modules ./node_modules
+COPY dist ./dist
 EXPOSE 3000
 USER node
 CMD ["node", "dist/index.js"]

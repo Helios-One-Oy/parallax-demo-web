@@ -66,6 +66,9 @@ jobs:
     needs: verdict
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: craci
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: cracicorp/setup@v1
         with:
@@ -81,8 +84,13 @@ jobs:
           key: npm-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
       - run: npm run build
-      - name: Build the release image (not pushed)
-        run: docker build -t northbound-dispatch-web:${{ github.sha }} .
-      # TODO(lead): once the CRACI GitHub connection is live, add GHCR login and
-      # `docker push` here (log in with ${{ github.token }} to ghcr.io and push
-      # ghcr.io/toukoursin/parallax-demo-web:${{ github.sha }}).
+      - run: npm prune --omit=dev
+      - name: Build and push the release image
+        env:
+          IMAGE: ghcr.io/helios-one-oy/parallax-demo-web
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
